@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firestore.dart';
@@ -57,9 +58,31 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: openNoteBox,  // Appelle la méthode addNote lorsqu'il est pressé
         tooltip: 'Add Note',  // Le tooltip qui s'affiche lorsqu'on maintient sur le bouton
         child: Icon(Icons.add),  // L'icône du bouton flottant
-      ),      body: Center(
-        child: Text('Welcome'),
       ),
+
+      body: StreamBuilder<QuerySnapshot>(
+          stream: firestoreService.getNotesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              List notesList = snapshot.data!.docs;
+              return ListView.builder(
+                itemCount: notesList.length,
+                itemBuilder: (context, index) {
+                DocumentSnapshot document = notesList[index];
+                String docIds = document.id;
+
+                Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+                String noteText = data['note'];
+                
+                return ListTile(
+                  title: Text(noteText),
+                );
+              },);
+            } else {
+              return const Text('No notes');
+            }
+          }
+      )
     );
   }
 }

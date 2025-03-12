@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FirestoreService {
 
-  // get colelction
+  // get collection
   final CollectionReference notes = FirebaseFirestore.instance.collection('notes');
 
   // CREATE
@@ -12,6 +12,11 @@ class FirestoreService {
       'note': note,
       'timestamp': Timestamp.now()
     });
+  }
+
+  Stream<QuerySnapshot> getNotesStream() {
+    final notesStream = notes.orderBy('timestamp', descending: true).snapshots();
+    return notesStream;
   }
 
 }
