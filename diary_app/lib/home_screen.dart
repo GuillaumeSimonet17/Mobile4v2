@@ -307,13 +307,13 @@ class _ProfilePageState extends State<ProfilePage>
                                 title: SizedBox(
                                   width: 250,
                                   child: Text(
-                                   '$title - $mood',
+                                    '$title - $mood',
                                     softWrap: true,
                                     maxLines: 2,
                                     style: GoogleFonts.montserrat(
                                       fontSize: 20,
                                       color: Colors.white,
-                                      fontWeight: FontWeight.w600
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
@@ -384,7 +384,7 @@ class _ProfilePageState extends State<ProfilePage>
                                               Text(
                                                 '$mood',
                                                 style: GoogleFonts.montserrat(
-                                                  fontWeight: FontWeight.bold
+                                                  fontWeight: FontWeight.bold,
                                                 ),
                                               ),
                                               SizedBox(height: 8),
@@ -543,27 +543,19 @@ class _ProfilePageState extends State<ProfilePage>
                 isEqualTo: FirebaseAuth.instance.currentUser?.email,
               )
               .snapshots(),
-      // Utilise .snapshots() pour écouter les changements en temps réel dans Firestore
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(),
-          ); // Affiche un indicateur de chargement pendant la récupération des données
+          return Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          ); // Affiche une erreur si la récupération des données échoue
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(
-            child: Text('No meetings found.'),
-          ); // Affiche un message si aucune donnée n'est trouvée
+          return Center(child: Text('No meetings found.'));
         }
 
-        // Map les documents Firestore en une liste de meetings
         List<Meeting> meetings =
             snapshot.data!.docs.map((document) {
               final Map<String, dynamic> data =
@@ -583,14 +575,17 @@ class _ProfilePageState extends State<ProfilePage>
               );
             }).toList();
 
-        // Retourne le calendrier avec les meetings mis à jour
-        return SfCalendar(
-          view: CalendarView.month,
-          dataSource: MeetingDataSource(meetings),
-          // Passe les meetings récupérés à la source de données du calendrier
-          monthViewSettings: const MonthViewSettings(
-            appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
-          ),
+        return Column(
+          children: [
+            SfCalendar(
+              view: CalendarView.month,
+              dataSource: MeetingDataSource(meetings),
+
+              monthViewSettings: const MonthViewSettings(
+                appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+              ),
+            ),
+          ],
         );
       },
     );
