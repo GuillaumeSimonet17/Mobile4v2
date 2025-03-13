@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
                 return LoginPage();
               }
               else {
-                return ProfilePage(title: FirebaseAuth.instance.currentUser!.displayName!);
+                return ProfilePage(title: FirebaseAuth.instance.currentUser!.displayName!, email: FirebaseAuth.instance.currentUser!.email!);
               }
             }
             return Scaffold(

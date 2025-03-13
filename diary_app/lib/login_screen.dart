@@ -13,8 +13,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  bool isSigningIn = false;
-
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +76,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   signInWithGoogle() async {
-    if (isSigningIn) return;
-    isSigningIn = true;
-
     try {
       GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
         print("Google sign-in was cancelled.");
-        isSigningIn = false;
         return;
       }
 
@@ -101,19 +95,16 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       print("Error signing in with Google: $e");
     } finally {
-      isSigningIn = false;
+      print("Sing in with Google successful");
     }
   }
 
   signInWithGithub() async {
-    if (isSigningIn) return;
-    isSigningIn = true;
-
     try {
       GithubAuthProvider githubProvider = GithubAuthProvider();
 
       if (kIsWeb) {
-        await FirebaseAuth.instance.signInWithPopup(githubProvider);
+          await FirebaseAuth.instance.signInWithPopup(githubProvider);
       } else {
         UserCredential userCredential =
         await FirebaseAuth.instance.signInWithProvider(githubProvider);
@@ -123,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       print("Error signing in with GitHub: $e");
     } finally {
-      isSigningIn = false;
+      print("Sing in with GitHub successful");
     }
   }
 }

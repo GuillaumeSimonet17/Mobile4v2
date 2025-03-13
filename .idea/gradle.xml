@@ -32,6 +32,12 @@
         </option>
         <option name="resolveExternalAnnotations" value="false" />
       </GradleProjectSettings>
+      <GradleProjectSettings>
+        <option name="testRunner" value="CHOOSE_PER_TEST" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/diary_app2/android" />
+        <option name="gradleJvm" value="#GRADLE_LOCAL_JAVA_HOME" />
+        <option name="resolveExternalAnnotations" value="false" />
+      </GradleProjectSettings>
     </option>
   </component>
 </project>
