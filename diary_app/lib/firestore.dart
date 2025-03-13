@@ -27,7 +27,6 @@ class FirestoreService {
         .snapshots();
   }
 
-
   // UPDATE
   Future<void> updateEntry(
     String docId,
