@@ -21,12 +21,7 @@ class CalendarApp extends StatelessWidget {
   }
 }
 
-/// An object to set the appointment collection data source to calendar, which
-/// used to map the custom appointment data to the calendar appointment, and
-/// allows to add, remove or reset the appointment collection.
 class MeetingDataSource extends CalendarDataSource {
-  /// Creates a meeting data source, which used to set the appointment
-  /// collection to the calendar
   MeetingDataSource(List<Meeting> source) {
     appointments = source;
   }
@@ -51,11 +46,6 @@ class MeetingDataSource extends CalendarDataSource {
     return _getMeetingData(index).background;
   }
 
-  // @override
-  // bool isAllDay(int index) {
-  //   return _getMeetingData(index).isAllDay;
-  // }
-
   Meeting _getMeetingData(int index) {
     final dynamic meeting = appointments![index];
     late final Meeting meetingData;
@@ -67,22 +57,14 @@ class MeetingDataSource extends CalendarDataSource {
   }
 }
 
-/// Custom business object class which contains properties to hold the detailed
-/// information about the event data which will be rendered in calendar.
 class Meeting {
-  /// Creates a meeting class with required details.
-  Meeting(this.eventName, this.from, this.to, this.background);
+  Meeting(this.eventName, this.from, this.to, this.content, this.mood, this.background);
 
-  /// Event name which is equivalent to subject property of [Appointment].
   String eventName;
-
-  /// From which is equivalent to start time property of [Appointment].
+  String content;
+  String mood;
   DateTime from;
-
-  /// To which is equivalent to end time property of [Appointment].
   DateTime to;
-
-  /// Background which is equivalent to color property of [Appointment].
   Color background;
 }
 
@@ -184,8 +166,6 @@ class _ProfilePageState extends State<ProfilePage>
                       contentController.text,
                       moodController.text,
                     );
-                    // meetings.add(Meeting(
-                    //     'Conference', startTime, endTime, const Color(0xFF0F8644), false));
                   } else {
                     firestoreService.updateEntry(
                       docId,
@@ -365,6 +345,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     context: context,
                                     builder:
                                         (context) => AlertDialog(
+                                          scrollable: true,
                                           title: Text(
                                             title,
                                             style: GoogleFonts.montserrat(),
@@ -451,13 +432,11 @@ class _ProfilePageState extends State<ProfilePage>
                 );
               }
 
-              // Récupère les humeurs de tous les documents
               var moodsList =
                   snapshot.data!.docs
                       .map((document) => document['mood'] as String)
                       .toList();
 
-              // Calcul des pourcentages pour chaque humeur
               Map<String, int> moodCount = {};
               for (var mood in moodsList) {
                 moodCount[mood] = (moodCount[mood] ?? 0) + 1;
@@ -517,6 +496,7 @@ class _ProfilePageState extends State<ProfilePage>
                                     ),
                                   ),
                                 );
+
                               },
                             ),
                           ],
@@ -534,61 +514,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Widget _buildTabAgenda() {
-    return StreamBuilder<QuerySnapshot>(
-      stream:
-          FirebaseFirestore.instance
-              .collection('diary_entries')
-              .where(
-                'email',
-                isEqualTo: FirebaseAuth.instance.currentUser?.email,
-              )
-              .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('No meetings found.'));
-        }
-
-        List<Meeting> meetings =
-            snapshot.data!.docs.map((document) {
-              final Map<String, dynamic> data =
-                  document.data() as Map<String, dynamic>;
-              final String title = data['title'] ?? '';
-              final Timestamp timestamp = data['timestamp'];
-              final DateTime startTime = timestamp.toDate();
-              final DateTime endTime = startTime.add(
-                const Duration(minutes: 15),
-              );
-
-              return Meeting(
-                title,
-                startTime,
-                endTime,
-                const Color(0xFF0F8644),
-              );
-            }).toList();
-
-        return Column(
-          children: [
-            SfCalendar(
-              view: CalendarView.month,
-              dataSource: MeetingDataSource(meetings),
-
-              monthViewSettings: const MonthViewSettings(
-                appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    return AgendaTab();
   }
 
   @override
@@ -636,6 +562,140 @@ class _ProfilePageState extends State<ProfilePage>
           ],
         ),
       ),
+    );
+  }
+}
+
+class AgendaTab extends StatefulWidget {
+  @override
+  _AgendaTabState createState() => _AgendaTabState();
+}
+
+class _AgendaTabState extends State<AgendaTab> {
+  ValueNotifier<DateTime> _selectedDate = ValueNotifier<DateTime>(DateTime.now());
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('diary_entries')
+          .where('email', isEqualTo: FirebaseAuth.instance.currentUser?.email)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No meetings found.'));
+        }
+
+        List<Meeting> meetings = snapshot.data!.docs.map((document) {
+          final Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+          final String title = data['title'] ?? '';
+          final String content = data['content'] ?? '';
+          final Timestamp timestamp = data['timestamp'];
+          final String mood = data['mood'];
+          final DateTime startTime = timestamp.toDate();
+          final DateTime endTime = startTime.add(const Duration(minutes: 15));
+
+          Map<String, Color> moodColors = {
+            'Happy': Colors.green,
+            'Sad': Colors.blue.shade900,
+            'Excited': Colors.orange,
+            'Angry': Colors.red,
+            'Relaxed': Colors.blue.shade300,
+          };
+
+          Color? moodColor = moodColors[mood];
+
+          return Meeting(title, startTime, endTime, content, mood, moodColor!);
+        }).toList();
+
+        return Column(
+          children: [
+            Expanded(
+              flex: 2,
+              child: SfCalendar(
+                view: CalendarView.month,
+                // dataSource: MeetingDataSource(meetings),
+                onSelectionChanged: (CalendarSelectionDetails details) {
+                  _selectedDate.value = details.date ?? DateTime.now();
+                },
+                initialSelectedDate: DateTime.now(),
+                monthViewSettings: const MonthViewSettings(
+                  appointmentDisplayMode: MonthAppointmentDisplayMode.appointment,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Expanded(
+              flex: 1,
+              child: ValueListenableBuilder<DateTime>(
+                valueListenable: _selectedDate,
+                builder: (context, selectedDate, child) {
+                  List<Meeting> meetingsOfTheDay = meetings.where((meeting) {
+                    return meeting.from.year == selectedDate.year &&
+                        meeting.from.month == selectedDate.month &&
+                        meeting.from.day == selectedDate.day;
+                  }).toList();
+
+                  meetingsOfTheDay.sort((b, a) => a.from.compareTo(b.from));
+
+                  return ListView.builder(
+                    itemCount: meetingsOfTheDay.length,
+                    itemBuilder: (context, index) {
+                      final meeting = meetingsOfTheDay[index];
+                      return ListTile(
+                        title: Text(meeting.eventName),
+                        subtitle: Text('${meeting.from.hour}:${meeting.from.minute}'),
+                        leading: CircleAvatar(
+                          backgroundColor: meeting.background,
+                        ),
+                        onTap: () {
+                          String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(meeting.from);
+
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              scrollable: true,
+                              title: Text(meeting.eventName),
+                              content: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(formattedDate, style: TextStyle(color: Colors.grey)),
+                                  const SizedBox(height: 8),
+                                  Text(meeting.mood),
+                                  const SizedBox(height: 8),
+                                  Text(meeting.content),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('Close'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
